@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AllLife Bank — Loan Propensity Predictor</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --blue:   #2E86AB;
+      --dark:   #1D3557;
+      --light:  #A8DADC;
+      --bg:     #f0f4f8;
+      --card:   #ffffff;
+      --border: #d1dce8;
+      --text:   #1a202c;
+      --muted:  #64748b;
+      --green:  #166534;
+      --green-bg: #dcfce7;
+      --red:    #991b1b;
+      --red-bg: #fee2e2;
+      --radius: 10px;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+
+    header {
+      background: linear-gradient(135deg, var(--dark) 0%, var(--blue) 100%);
+      color: #fff;
+      padding: 40px 24px 36px;
+      text-align: center;
+    }
+
+    header .badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.07em;
+      padding: 4px 12px;
+      margin-bottom: 16px;
+      text-transform: uppercase;
+    }
+
+    header h1 { font-size: clamp(1.4rem, 3.5vw, 2rem); font-weight: 800; margin-bottom: 8px; }
+    header p  { font-size: 0.95rem; opacity: 0.82; max-width: 520px; margin: 0 auto; }
+
+    .metric-strip {
+      display: flex;
+      justify-content: center;
+      gap: 28px;
+      margin-top: 20px;
+      flex-wrap: wrap;
+    }
+    .metric-strip .m { text-align: center; }
+    .metric-strip .m .v { font-size: 1.5rem; font-weight: 800; }
+    .metric-strip .m .l { font-size: 0.7rem; opacity: 0.72; letter-spacing: 0.06em; text-transform: uppercase; }
+
+    main {
+      max-width: 860px;
+      margin: 36px auto;
+      padding: 0 20px 60px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+    }
+
+    @media (max-width: 640px) { main { grid-template-columns: 1fr; } }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+
+    .card h2 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--dark);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      margin-bottom: 18px;
+      padding-bottom: 10px;
+      border-bottom: 2px solid var(--border);
+    }
+
+    .field { margin-bottom: 14px; }
+    .field label {
+      display: block;
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 5px;
+    }
+    .field input, .field select {
+      width: 100%;
+      padding: 9px 12px;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 0.9rem;
+      color: var(--text);
+      background: #fff;
+      transition: border-color 0.15s;
+    }
+    .field input:focus, .field select:focus {
+      outline: none;
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px rgba(46,134,171,0.12);
+    }
+    .field .hint { font-size: 0.72rem; color: var(--muted); margin-top: 3px; }
+
+    .toggle-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+    }
+    .toggle-btn {
+      padding: 8px;
+      border: 1.5px solid var(--border);
+      border-radius: 6px;
+      background: #fff;
+      font-size: 0.82rem;
+      font-weight: 500;
+      color: var(--muted);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .toggle-btn.active {
+      border-color: var(--blue);
+      background: rgba(46,134,171,0.08);
+      color: var(--blue);
+      font-weight: 600;
+    }
+
+    .submit-btn {
+      width: 100%;
+      margin-top: 6px;
+      padding: 13px;
+      background: var(--blue);
+      color: #fff;
+      border: none;
+      border-radius: var(--radius);
+      font-size: 1rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity 0.15s;
+    }
+    .submit-btn:hover { opacity: 0.88; }
+    .submit-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Result panel */
+    .result-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .result-card {
+      border-radius: var(--radius);
+      padding: 22px;
+      text-align: center;
+      display: none;
+    }
+    .result-card.accept  { background: var(--green-bg); border: 1.5px solid #86efac; }
+    .result-card.decline { background: var(--red-bg);   border: 1.5px solid #fca5a5; }
+
+    .result-card .icon { font-size: 2.4rem; margin-bottom: 8px; }
+    .result-card .verdict {
+      font-size: 1.2rem;
+      font-weight: 800;
+      margin-bottom: 6px;
+    }
+    .result-card.accept  .verdict { color: var(--green); }
+    .result-card.decline .verdict { color: var(--red); }
+    .result-card .sub { font-size: 0.85rem; color: var(--muted); }
+
+    .prob-section { margin-top: 4px; }
+    .prob-label {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.78rem;
+      font-weight: 600;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .prob-bar-bg {
+      height: 10px;
+      background: var(--border);
+      border-radius: 20px;
+      overflow: hidden;
+    }
+    .prob-bar-fill {
+      height: 100%;
+      border-radius: 20px;
+      background: var(--blue);
+      transition: width 0.5s ease;
+      width: 0%;
+    }
+
+    .confidence-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      margin-top: 12px;
+      background: rgba(46,134,171,0.12);
+      color: var(--blue);
+    }
+
+    .placeholder-card {
+      background: #f8fafc;
+      border: 1.5px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 40px 24px;
+      text-align: center;
+      color: var(--muted);
+      font-size: 0.9rem;
+      flex: 1;
+    }
+    .placeholder-card .icon { font-size: 2rem; margin-bottom: 10px; opacity: 0.4; }
+
+    .model-info {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px 22px;
+    }
+    .model-info h3 {
+      font-size: 0.78rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin-bottom: 12px;
+    }
+    .model-info table { width: 100%; border-collapse: collapse; font-size: 0.82rem; }
+    .model-info td { padding: 5px 0; }
+    .model-info td:first-child { color: var(--muted); width: 55%; }
+    .model-info td:last-child { font-weight: 600; color: var(--dark); }
+
+    .error-msg {
+      background: var(--red-bg);
+      border: 1px solid #fca5a5;
+      border-radius: var(--radius);
+      padding: 12px 16px;
+      font-size: 0.85rem;
+      color: var(--red);
+      display: none;
+    }
+
+    footer {
+      text-align: center;
+      padding: 20px;
+      font-size: 0.82rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    footer a { color: var(--blue); text-decoration: none; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">Live ML Demo</div>
+  <h1>AllLife Bank — Loan Propensity Predictor</h1>
+  <p>Enter a customer profile to predict personal loan acceptance probability.</p>
+  <div class="metric-strip">
+    <div class="m"><div class="v">0.915</div><div class="l">Test F1</div></div>
+    <div class="m"><div class="v">0.903</div><div class="l">Recall</div></div>
+    <div class="m"><div class="v">0.929</div><div class="l">Precision</div></div>
+    <div class="m"><div class="v">DT</div><div class="l">Model</div></div>
+  </div>
+</header>
+
+<main>
+
+  <!-- INPUT FORM -->
+  <div class="card">
+    <h2>Customer Profile</h2>
+    <form id="predictForm">
+
+      <div class="field">
+        <label>Age</label>
+        <input type="number" id="age" min="18" max="100" value="35" required />
+      </div>
+
+      <div class="field">
+        <label>Annual Income (thousands USD)</label>
+        <input type="number" id="income" min="0" value="120" required />
+        <div class="hint">e.g. 120 = $120,000/year</div>
+      </div>
+
+      <div class="field">
+        <label>Family Size</label>
+        <select id="family">
+          <option value="1">1 member</option>
+          <option value="2">2 members</option>
+          <option value="3" selected>3 members</option>
+          <option value="4">4 members</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Monthly Credit Card Spend (thousands USD)</label>
+        <input type="number" id="cc_avg" min="0" step="0.1" value="3.0" required />
+        <div class="hint">e.g. 3.0 = $3,000/month</div>
+      </div>
+
+      <div class="field">
+        <label>Education Level</label>
+        <select id="education">
+          <option value="1">Undergrad</option>
+          <option value="2" selected>Graduate</option>
+          <option value="3">Advanced / Professional</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Mortgage Value (thousands USD)</label>
+        <input type="number" id="mortgage" min="0" value="0" required />
+        <div class="hint">Enter 0 if no mortgage</div>
+      </div>
+
+      <div class="field">
+        <label>ZIP Code</label>
+        <input type="text" id="zip_code" maxlength="10" value="94025" required />
+      </div>
+
+      <div class="field">
+        <label>Securities Account</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" data-field="securities_account" data-val="0">No</button>
+          <button type="button" class="toggle-btn active" data-field="securities_account" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>CD Account</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn active" data-field="cd_account" data-val="0">No</button>
+          <button type="button" class="toggle-btn" data-field="cd_account" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Online Banking</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn" data-field="online" data-val="0">No</button>
+          <button type="button" class="toggle-btn active" data-field="online" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <div class="field">
+        <label>Bank-Issued Credit Card</label>
+        <div class="toggle-row">
+          <button type="button" class="toggle-btn active" data-field="credit_card" data-val="0">No</button>
+          <button type="button" class="toggle-btn" data-field="credit_card" data-val="1">Yes</button>
+        </div>
+      </div>
+
+      <button type="submit" class="submit-btn" id="submitBtn">Predict Loan Propensity</button>
+    </form>
+  </div>
+
+  <!-- RESULT PANEL -->
+  <div class="result-panel">
+
+    <div class="card">
+      <h2>Prediction Result</h2>
+
+      <div class="error-msg" id="errorMsg"></div>
+
+      <div class="placeholder-card" id="placeholder">
+        <div class="icon">🏦</div>
+        Fill in the customer profile and click Predict to see the result.
+      </div>
+
+      <div class="result-card" id="resultCard">
+        <div class="icon" id="resultIcon"></div>
+        <div class="verdict" id="resultVerdict"></div>
+        <div class="sub" id="resultSub"></div>
+
+        <div class="prob-section">
+          <div class="prob-label">
+            <span>Acceptance Probability</span>
+            <span id="probText">—</span>
+          </div>
+          <div class="prob-bar-bg">
+            <div class="prob-bar-fill" id="probBar"></div>
+          </div>
+        </div>
+
+        <div><span class="confidence-badge" id="confidenceBadge"></span></div>
+      </div>
+    </div>
+
+    <div class="model-info">
+      <h3>Model Information</h3>
+      <table>
+        <tr><td>Algorithm</td><td>Decision Tree (post-pruned)</td></tr>
+        <tr><td>Test F1 Score</td><td>0.915</td></tr>
+        <tr><td>Test Recall</td><td>0.903 (90.3%)</td></tr>
+        <tr><td>Test Precision</td><td>0.929 (92.9%)</td></tr>
+        <tr><td>Training samples</td><td>3,500 (70/30 split)</td></tr>
+        <tr><td>Top predictor</td><td>Income (61.7%)</td></tr>
+        <tr><td>Preprocessing</td><td>sklearn Pipeline</td></tr>
+      </table>
+    </div>
+
+  </div>
+
+</main>
+
+<footer>
+  <p>Gary Bardet · ML &amp; Gen AI Engineer ·
+    <a href="https://agbardet.github.io">Portfolio</a> ·
+    <a href="https://github.com/agbardet/loan-campaign" target="_blank">Training Repo</a> ·
+    <a href="/docs" target="_blank">API Docs</a>
+  </p>
+</footer>
+
+<script>
+  // Toggle button state management
+  const toggleState = {
+    securities_account: 1,
+    cd_account: 0,
+    online: 1,
+    credit_card: 0,
+  };
+
+  document.querySelectorAll('.toggle-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const field = btn.dataset.field;
+      const val = parseInt(btn.dataset.val);
+      toggleState[field] = val;
+      btn.closest('.toggle-row').querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+    });
+  });
+
+  // Form submit
+  document.getElementById('predictForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const btn = document.getElementById('submitBtn');
+    const errEl = document.getElementById('errorMsg');
+    btn.disabled = true;
+    btn.textContent = 'Predicting…';
+    errEl.style.display = 'none';
+
+    const payload = {
+      age: parseInt(document.getElementById('age').value),
+      income: parseInt(document.getElementById('income').value),
+      family: parseInt(document.getElementById('family').value),
+      cc_avg: parseFloat(document.getElementById('cc_avg').value),
+      education: parseInt(document.getElementById('education').value),
+      mortgage: parseInt(document.getElementById('mortgage').value),
+      zip_code: document.getElementById('zip_code').value.trim(),
+      securities_account: toggleState.securities_account,
+      cd_account: toggleState.cd_account,
+      online: toggleState.online,
+      credit_card: toggleState.credit_card,
+    };
+
+    try {
+      const res = await fetch('/predict', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.detail || 'Prediction failed');
+      }
+
+      const data = await res.json();
+      showResult(data);
+    } catch (err) {
+      errEl.textContent = 'Error: ' + err.message;
+      errEl.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Predict Loan Propensity';
+    }
+  });
+
+  function showResult(data) {
+    document.getElementById('placeholder').style.display = 'none';
+    const card = document.getElementById('resultCard');
+    card.style.display = 'block';
+    card.className = 'result-card ' + (data.prediction === 1 ? 'accept' : 'decline');
+
+    document.getElementById('resultIcon').textContent  = data.prediction === 1 ? '✅' : '❌';
+    document.getElementById('resultVerdict').textContent = data.label;
+    document.getElementById('resultSub').textContent =
+      data.prediction === 1
+        ? 'This customer is a strong candidate for a loan offer.'
+        : 'This customer is unlikely to accept a loan offer at this time.';
+
+    const pct = Math.round(data.probability * 100);
+    document.getElementById('probText').textContent = pct + '%';
+    document.getElementById('probBar').style.width = pct + '%';
+    document.getElementById('probBar').style.background =
+      data.prediction === 1 ? '#16a34a' : '#dc2626';
+
+    document.getElementById('confidenceBadge').textContent =
+      'Confidence: ' + data.confidence;
+  }
+</script>
+
+</body>
+</html>
