@@ -25,10 +25,10 @@ def predict(pipeline, data: CustomerInput) -> PredictionOutput:
     prob = float(pipeline.predict_proba(df)[0][1])
     pred = int(prob >= 0.5)
     label = "Likely to Accept" if pred == 1 else "Unlikely to Accept"
-    if prob >= 0.8 or prob <= 0.2:
+    if prob >= 0.95 or prob <= 0.05:
+        confidence = "Very High"
+    elif prob >= 0.75 or prob <= 0.25:
         confidence = "High"
-    elif 0.35 < prob < 0.65:
-        confidence = "Medium"
     else:
         confidence = "Medium"
     return PredictionOutput(

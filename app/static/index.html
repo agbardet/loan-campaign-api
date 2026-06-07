@@ -394,16 +394,16 @@
       <span class="s-expect decline">Expect: Decline</span>
     </button>
 
-    <button class="scenario-btn" onclick="loadScenario('advanced_degree')">
-      <div class="s-label">Senior Professional</div>
-      <div class="s-desc">Age 52 · $180K income · Family 4 · Advanced degree</div>
-      <span class="s-expect accept">Expect: Accept</span>
+    <button class="scenario-btn" onclick="loadScenario('near_threshold_accept')">
+      <div class="s-label">Near-Threshold Accept</div>
+      <div class="s-desc">Age 40 · $110K income · CCAvg $4K · Graduate</div>
+      <span class="s-expect accept">Expect: Accept (87%)</span>
     </button>
 
-    <button class="scenario-btn" onclick="loadScenario('borderline')">
-      <div class="s-label">Borderline Case</div>
-      <div class="s-desc">Age 38 · $75K income · Family 2 · Graduate</div>
-      <span class="s-expect borderline">Expect: Uncertain</span>
+    <button class="scenario-btn" onclick="loadScenario('near_threshold_decline')">
+      <div class="s-label">Near-Threshold Decline</div>
+      <div class="s-desc">Age 40 · $110K income · CCAvg $2.5K · Graduate</div>
+      <span class="s-expect borderline">Expect: Decline (14%)</span>
     </button>
 
   </div>
@@ -569,14 +569,14 @@
       mortgage: 0, zip_code: '30301',
       securities_account: 0, cd_account: 0, online: 0, credit_card: 0,
     },
-    advanced_degree: {
-      age: 52, income: 180, family: 4, cc_avg: 6.5, education: 3,
-      mortgage: 200, zip_code: '10001',
-      securities_account: 1, cd_account: 1, online: 1, credit_card: 1,
+    near_threshold_accept: {
+      age: 40, income: 110, family: 2, cc_avg: 4.0, education: 2,
+      mortgage: 0, zip_code: '94025',
+      securities_account: 0, cd_account: 0, online: 1, credit_card: 0,
     },
-    borderline: {
-      age: 38, income: 75, family: 2, cc_avg: 1.8, education: 2,
-      mortgage: 80, zip_code: '60601',
+    near_threshold_decline: {
+      age: 40, income: 110, family: 2, cc_avg: 2.5, education: 2,
+      mortgage: 0, zip_code: '94025',
       securities_account: 0, cd_account: 0, online: 1, credit_card: 0,
     },
   };
