@@ -178,11 +178,27 @@
     .result-card .verdict {
       font-size: 1.2rem;
       font-weight: 800;
-      margin-bottom: 6px;
+      margin-bottom: 4px;
     }
     .result-card.accept  .verdict { color: var(--green); }
     .result-card.decline .verdict { color: var(--red); }
-    .result-card .sub { font-size: 0.85rem; color: var(--muted); }
+    .result-card .sub { font-size: 0.83rem; color: var(--muted); margin-bottom: 16px; }
+
+    /* Big probability display */
+    .prob-number-row { margin: 4px 0 14px; }
+    .prob-big {
+      font-size: 3rem;
+      font-weight: 900;
+      line-height: 1;
+      letter-spacing: -1px;
+    }
+    .result-card.accept  .prob-big { color: var(--green); }
+    .result-card.decline .prob-big { color: var(--red); }
+    .prob-raw {
+      font-size: 0.78rem;
+      color: var(--muted);
+      margin-top: 2px;
+    }
 
     .prob-section { margin-top: 4px; }
     .prob-label {
@@ -207,15 +223,27 @@
       width: 0%;
     }
 
-    .confidence-badge {
-      display: inline-block;
-      padding: 4px 12px;
-      border-radius: 20px;
-      font-size: 0.75rem;
-      font-weight: 600;
-      margin-top: 12px;
-      background: rgba(46,134,171,0.12);
-      color: var(--blue);
+    /* Stats row */
+    .result-stats {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 8px;
+      margin-top: 16px;
+      padding-top: 14px;
+      border-top: 1px solid rgba(0,0,0,0.08);
+    }
+    .stat { text-align: center; }
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--dark);
+    }
+    .stat-lbl {
+      font-size: 0.68rem;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-top: 2px;
     }
 
     .placeholder-card {
@@ -517,6 +545,13 @@
         <div class="verdict" id="resultVerdict"></div>
         <div class="sub" id="resultSub"></div>
 
+        <!-- Big probability number -->
+        <div class="prob-number-row">
+          <div class="prob-big" id="probBig">—</div>
+          <div class="prob-raw" id="probRaw">—</div>
+        </div>
+
+        <!-- Bar -->
         <div class="prob-section">
           <div class="prob-label">
             <span>Acceptance Probability</span>
@@ -527,7 +562,21 @@
           </div>
         </div>
 
-        <div><span class="confidence-badge" id="confidenceBadge"></span></div>
+        <!-- Stats row -->
+        <div class="result-stats">
+          <div class="stat">
+            <div class="stat-val" id="confidenceVal">—</div>
+            <div class="stat-lbl">Confidence</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="predictionVal">—</div>
+            <div class="stat-lbl">Prediction</div>
+          </div>
+          <div class="stat">
+            <div class="stat-val" id="decimalVal">—</div>
+            <div class="stat-lbl">Raw Score</div>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -675,21 +724,29 @@
     card.style.display = 'block';
     card.className = 'result-card ' + (data.prediction === 1 ? 'accept' : 'decline');
 
-    document.getElementById('resultIcon').textContent  = data.prediction === 1 ? '✅' : '❌';
+    document.getElementById('resultIcon').textContent    = data.prediction === 1 ? '✅' : '❌';
     document.getElementById('resultVerdict').textContent = data.label;
-    document.getElementById('resultSub').textContent =
+    document.getElementById('resultSub').textContent     =
       data.prediction === 1
         ? 'This customer is a strong candidate for a loan offer.'
         : 'This customer is unlikely to accept a loan offer at this time.';
 
     const pct = Math.round(data.probability * 100);
-    document.getElementById('probText').textContent = pct + '%';
-    document.getElementById('probBar').style.width = pct + '%';
+
+    // Big probability number
+    document.getElementById('probBig').textContent = pct + '%';
+    document.getElementById('probRaw').textContent = 'raw score: ' + data.probability.toFixed(3);
+
+    // Bar
+    document.getElementById('probText').textContent    = pct + '%';
+    document.getElementById('probBar').style.width     = pct + '%';
     document.getElementById('probBar').style.background =
       data.prediction === 1 ? '#16a34a' : '#dc2626';
 
-    document.getElementById('confidenceBadge').textContent =
-      'Confidence: ' + data.confidence;
+    // Stats row
+    document.getElementById('confidenceVal').textContent = data.confidence;
+    document.getElementById('predictionVal').textContent = data.prediction === 1 ? 'Accept' : 'Decline';
+    document.getElementById('decimalVal').textContent    = data.probability.toFixed(3);
   }
 </script>
 
